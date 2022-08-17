@@ -66,18 +66,6 @@ test_query_pairs <- function(gene, marker_pairs, covar_names = NULL, max_pair_co
     cat("\nChecking marker pairs for genotype representation...\n")
   }
   
-  # covariates should be paired with every marker
-  # so only check pairs for genetic markers, and make
-  # a separate list of pairs for covariates with
-  # markers and each other
-  all_covar_pairs <- NULL
-  if(!is.null(covar_names)){
-    covar_locale <- match(covar_names, colnames(gene))
-    gene <- gene[,-covar_locale,drop=FALSE]
-    covar_pairs <- pair_matrix(covar_names)
-    covar_geno_pairs <- cbind(rep(colnames(gene), length(covar_names)), rep(covar_names, each = ncol(gene)))
-    all_covar_pairs <- rbind(covar_geno_pairs, covar_pairs)
-  }
   
   if(!is.null(max_pair_cor)){
     thresh_param <- max_pair_cor
@@ -160,7 +148,7 @@ test_query_pairs <- function(gene, marker_pairs, covar_names = NULL, max_pair_co
   
   colnames(pairs_mat) <- c("marker1", "marker2")
   rownames(pairs_mat) <- NULL
-  pairs_mat <- rbind(pairs_mat, all_covar_pairs)
+  pairs_mat <- rbind(pairs_mat)
   
   if(verbose){
     cat(dim(pairs_mat)[1], "pairs including covariates will be tested.\n")

@@ -3,7 +3,7 @@ plot_variant_effects_query <- function(data_obj, geno_obj,
     p_or_q = 0.05, scale_coord = 1, verbose = FALSE){
 
     query_genotype <- data_obj$query_genotype
-    trait_cols <- categorical_pal(8)
+    trait_cols <- categorical_pal(ncol(geno_obj))
     pheno_type <- pheno_type[1]
 
     coord_label = paste0("Position (bp/", scale_coord, ")")
@@ -186,7 +186,7 @@ plot_variant_effects_query <- function(data_obj, geno_obj,
         plot.window(xlim = c(0,1), ylim = c(0,1))        
         par(mar = c(0,0,0,0))
         legend(x = 0.5, y = 1, col = trait_cols, pch = 16,
-            legend = 1:8)
+            legend = 1:ncol(geno_obj))
 
         mtext(paste("Chr", ch), side = 3, outer = TRUE, line = -1)
     }

@@ -4,8 +4,8 @@ plotly_variant_effects_query <- function(data_obj, geno_obj,
     gene.bp.window = 5000, verbose = FALSE){
 
     query_genotype <- data_obj$query_genotype
-    allele_cols <- categorical_pal(8)
-    names(allele_cols) <- 1:8
+    allele_cols <- categorical_pal(ncol(geno_obj))
+    names(allele_cols) <- 1:ncol(geno_obj)
     pheno_cols <- c("#9ecae1", "#bdbdbd")
     pheno_type <- pheno_type[1]
 

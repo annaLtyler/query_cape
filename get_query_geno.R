@@ -3,6 +3,7 @@ get_query_geno <- function(data_obj, geno_obj, query_genotype){
     covar_info <- get_covar(data_obj)
     covar_names <- covar_info$covar_names
     covar_table <- covar_info$covar_table
+    colnames(covar_table) <- covar_names
 
     #create a large 2D matrix with all alleles
     geno <- get_geno(data_obj, geno_obj)

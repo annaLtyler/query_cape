@@ -6,7 +6,8 @@ plot_variant_influences_query <- function(data_obj, geno_obj, p_or_q = 0.05){
     var_inf <- write_variant_influences(data_obj, p_or_q = p_or_q, 
         include_main_effects = TRUE, mark_covar = FALSE, 
         write_file = FALSE)
-    just_main <- var_inf[which(is.na(var_inf[,6])),]
+    main_locale <- which(var_inf[,"Target"] %in% colnames(data_obj$pheno))
+    just_main <- var_inf[main_locale,]
     
     main_chr <- as.numeric(just_main[,2])
     main_pos <- as.numeric(just_main[,3])
@@ -23,7 +24,7 @@ plot_variant_influences_query <- function(data_obj, geno_obj, p_or_q = 0.05){
         include_main_effects = FALSE, mark_covar = FALSE, 
         write_file = FALSE)
 
-    main_allele <- as.numeric(sapply(strsplit(just_main[,"Source"], "_"), function(x) x[2]))
+    main_allele <- sapply(strsplit(just_main[,"Source"], "_"), function(x) x[2])
     
     #each interaction in query_cape has the query genotype as
     #the source or the target.
