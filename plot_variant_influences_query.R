@@ -1,7 +1,8 @@
 plot_variant_influences_query <- function(data_obj, geno_obj, p_or_q = 0.05){
 
     query_genotype <- data_obj$query_genotype
-    trait_cols <- categorical_pal(8)
+    trait_cols <- categorical_pal(ncol(data_obj$pheno))
+    allele_cols <- categorical_pal(ncol(geno_obj))
 
     var_inf <- write_variant_influences(data_obj, p_or_q = p_or_q, 
         include_main_effects = TRUE, mark_covar = FALSE, 
@@ -70,7 +71,8 @@ plot_variant_influences_query <- function(data_obj, geno_obj, p_or_q = 0.05){
         plot.new()
         plot.window(xlim = chr.boundaries, ylim = main.lim)
         points(main.chr.pos, main.chr.effect, col = main.chr.col, type = "h") 
-        points(main.chr.pos, main.chr.effect, col = trait_cols[main.chr.alleles], type = "p",
+        pt.cols <- allele_cols[match(main.chr.alleles, colnames(geno_obj))]
+        points(main.chr.pos, main.chr.effect, col = pt.cols, type = "p",
             pch = 16, cex = 0.5)
         abline(h = 0)       
         axis(2)
@@ -86,13 +88,15 @@ plot_variant_influences_query <- function(data_obj, geno_obj, p_or_q = 0.05){
         par(mar = c(4,4,0,4))
         plot.new()
         plot.window(xlim = chr.boundaries, ylim = int.lim)
-        target.allele <- as.numeric(sapply(strsplit(var_int[target.chr.locale,"Target"], "_"), function(x) x[2]))
+        target.allele <- sapply(strsplit(var_int[target.chr.locale,"Target"], "_"), function(x) x[2])
+        target.col <- allele_cols[match(target.allele, colnames(geno_obj))]
         points(target.chr.pos, target.chr.effect, type = "h", col = "#a6611a")
-        points(target.chr.pos, target.chr.effect, type = "p", col = trait_cols[target.allele], cex = 0.5, pch = 16)
+        points(target.chr.pos, target.chr.effect, type = "p", col = target.col, cex = 0.5, pch = 16)
 
-        source.allele <- as.numeric(sapply(strsplit(var_int[source.chr.locale,"Source"], "_"), function(x) x[2]))
+        source.allele <- sapply(strsplit(var_int[source.chr.locale,"Source"], "_"), function(x) x[2])
+        source.col <- allele_cols[match(source.allele, colnames(geno_obj))]
         points(source.chr.pos, source.chr.effect, type = "h", col = "#018571")
-        points(source.chr.pos, source.chr.effect, type = "p", col = trait_cols[source.allele], cex = 0.5, pch = 16)
+        points(source.chr.pos, source.chr.effect, type = "p", col = source.col, cex = 0.5, pch = 16)
         abline(h = 0)
         axis(2);axis(1)
         mtext(side = 2, "Interaction Effect Size", line = 2.5)

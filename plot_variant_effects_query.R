@@ -3,7 +3,8 @@ plot_variant_effects_query <- function(data_obj, geno_obj,
     p_or_q = 0.05, scale_coord = 1, verbose = FALSE){
 
     query_genotype <- data_obj$query_genotype
-    trait_cols <- categorical_pal(ncol(geno_obj))
+    trait_cols <- categorical_pal(ncol(data_obj$pheno))
+    allele_cols <- categorical_pal(ncol(geno_obj))
     pheno_type <- pheno_type[1]
 
     coord_label = paste0("Position (bp/", scale_coord, ")")
@@ -149,9 +150,9 @@ plot_variant_effects_query <- function(data_obj, geno_obj,
             points(source.ch.pos[[ch]], source.deviation[[ch]][,p], type = "h",
                 col = trait_cols[p])
             #add allele colors
+            pt.col <- allele_cols[match(source.allele[[ch]], colnames(geno_obj))]
             points(source.ch.pos[[ch]], source.deviation[[ch]][,p], type = "p",
-                col = trait_cols[as.numeric(source.allele[[ch]])], pch = 16,
-                cex = 0.5)
+                col = pt.col, pch = 16, cex = 0.5)
 
         } 
         axis(1); axis(2)
@@ -171,9 +172,9 @@ plot_variant_effects_query <- function(data_obj, geno_obj,
         for(p in 1:ncol(pheno)){
             points(target.ch.pos[[ch]], target.deviation[[ch]][,p], type = "h",
                 col = trait_cols[p])
+            pt.col <- allele_cols[match(target.allele[[ch]], colnames(geno_obj))]
             points(target.ch.pos[[ch]], target.deviation[[ch]][,p], type = "p",
-                col = trait_cols[as.numeric(target.allele[[ch]])], pch = 16,
-                cex = 0.5)
+                col = pt.col, pch = 16,cex = 0.5)
 
         } 
         axis(1); axis(2)
