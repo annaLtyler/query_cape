@@ -28,5 +28,14 @@ get_query_geno <- function(data_obj, geno_obj, query_genotype){
     gene <- cbind(gene[geno_idx,], covar_table, query_genotype[query_geno_idx,])
     colnames(gene)[ncol(gene)] <- "query"
 
+    #if we are only looking at two alleles, A = 1-B, so we don't
+    #need to test both. If this is the case, remove all alleles
+    #that match the reference allele
+    if(ncol(geno_obj) == 2){
+        ref.allele <- data_obj$ref_allele
+        keep.idx <- which(fill_alleles != ref.allele)
+        gene <- gene[,keep.idx]
+    }
+
     return(gene)
 }

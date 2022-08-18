@@ -105,7 +105,7 @@ plot_variant_influences_query <- function(data_obj, geno_obj, p_or_q = 0.05){
         par(mar = c(0,0,0,0))
         plot.new()
         plot.window(xlim = c(0,1), ylim = c(0,1))
-        legend(x = 0, y = 0.8, legend = 1:8, col = trait_cols, pch = 16)
+        legend(x = 0, y = 0.8, legend = colnames(geno_obj), col = trait_cols, pch = 16)
 
         plot.new()
         plot.window(xlim = c(0,1), ylim = c(0,1))
