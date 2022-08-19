@@ -3,7 +3,7 @@ plot_one_variant_effect <- function(data_obj, geno_obj, marker_name,
     verbose = FALSE){
 
     query_genotype <- data_obj$query_genotype
-    trait_cols <- categorical_pal(8)
+    allele_cols <- categorical_pal(ncol(geno_obj))
     pheno_type <- pheno_type[1]
 
     if(pheno_type == "pheno"){
@@ -46,7 +46,8 @@ plot_one_variant_effect <- function(data_obj, geno_obj, marker_name,
         
     get_int <- function(phenoV, geno1, geno2){
         geno_pairs <- pair.matrix(c(0,1), self.pairs = TRUE, ordered = TRUE)
-        pheno.groups <- apply(geno_pairs, 1, function(x) phenoV[intersect(which(geno1 == x[1]), which(geno2 == x[2]))])
+        pheno.groups <- lapply(1:nrow(geno_pairs), 
+            function(x) phenoV[intersect(which(geno1 == geno_pairs[x,1]), which(geno2 == geno_pairs[x,2]))])
         #boxplot(pheno.groups, names = apply(geno_pairs, 1, function(x) paste(x, collapse = "_")))
         group.means <- sapply(pheno.groups, function(x) mean(x, na.rm = TRUE))
         #centered.groups <- lapply(pheno.groups, function(x) x-group.means[1])
@@ -70,7 +71,10 @@ plot_one_variant_effect <- function(data_obj, geno_obj, marker_name,
         marker.geno <- sapply(1:length(marker.names), function(x) matched.geno[,allele.names[x], marker.names[x]])
         colnames(marker.geno) <- marker.names
         
-        marker.int <- lapply(1:ncol(matched.pheno), function(y) lapply(1:ncol(marker.geno), function(x) get_int(matched.pheno[,y], marker.geno[,x], matched.query)))
+        marker.int <- lapply(1:ncol(matched.pheno), 
+            function(y) lapply(1:ncol(marker.geno), 
+            function(x) get_int(phenoV = matched.pheno[,y], geno1 = marker.geno[,x], 
+            geno2 = matched.query)))
         names(marker.int) <- colnames(matched.pheno)
 
         for(p in 1:length(marker.int)){
@@ -84,7 +88,9 @@ plot_one_variant_effect <- function(data_obj, geno_obj, marker_name,
             a <- barplot(mean.vals, 
             main = paste(colnames(matched.pheno)[p], marker.label, sep = "\n"), 
             names = c(marker.label, "query", "Additive", "Actual"),
-            col = trait_cols[as.numeric(allele.names)], ylim = c(min.val, max.val))
+            col = allele_cols[match(allele.names, colnames(geno_obj))], 
+            ylim = c(min.val, max.val))
+            
             segments(a[,1], mean.vals-se.vals, a[,1], mean.vals+se.vals)
             segments(a[,1]-0.2, mean.vals-se.vals, a[,1]+0.2, mean.vals-se.vals)
             segments(a[,1]-0.2, mean.vals+se.vals, a[,1]+0.2, mean.vals+se.vals)
