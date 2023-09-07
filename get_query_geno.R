@@ -7,6 +7,7 @@ get_query_geno <- function(data_obj, geno_obj, query_genotype){
 
     #create a large 2D matrix with all alleles
     geno <- get_geno(data_obj, geno_obj)
+
     gene <- matrix(NA, nrow = nrow(geno), ncol = dim(geno_obj)[2]*(dim(geno)[3]-1)) #take off the query allele, which is the last marker
     start_idx <- 1
     n_alleles <- dim(geno)[2]
@@ -25,6 +26,8 @@ get_query_geno <- function(data_obj, geno_obj, query_genotype){
     common.ind <- intersect(rownames(geno), rownames(query_genotype))
     query_geno_idx <- match(common.ind, rownames(query_genotype))
     geno_idx <- match(common.ind, rownames(geno))
+
+
     gene <- cbind(gene[geno_idx,], covar_table, query_genotype[query_geno_idx,])
     colnames(gene)[ncol(gene)] <- "query"
 

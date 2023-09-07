@@ -103,7 +103,7 @@ run_query_cape <- function(pheno_obj, geno_obj, query_genotype,
     
     if(isFALSE(kin_obj)){
       #if there isn't a kinship object already, we need to make one
-      kin_obj <- kinship(data_obj, geno_obj, type = "overall", 
+      kin_obj <- kinship(data_obj, geno_obj, type = data_obj$kinship_type, 
       pop = data_obj$pop)
       data_obj$save_rds(kin_obj, kin_file_name)
     }

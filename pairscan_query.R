@@ -103,9 +103,9 @@ pairscan_query <- function(data_obj, geno_obj = NULL, query_genotype,
   covar_info <- get_covar(data_obj)
   covar_names <- covar_info$covar_names
   covar_table <- covar_info$covar_table
-  
+
   #create a large 2D matrix with all alleles
-  
+
   gene <- get_query_geno(data_obj, geno_obj, query_genotype)
 
   #create a pair matrix that pairs the query genotype with all other
@@ -159,7 +159,7 @@ pairscan_query <- function(data_obj, geno_obj = NULL, query_genotype,
       n_perm = pairscan_null_size, verbose = verbose, n_cores = n_cores, 
       run_parallel = run_parallel)
   }else{
-    pairscan_results <- pairscan_kin(data_obj, geno_obj = geno_obj, 
+    pairscan_results <- pairscan_kin_query(data_obj, geno_mat = gene, 
       scan_what = scan_what, marker_pairs = pared_marker_mat, kin_obj = kin_obj, 
       verbose = verbose, run_parallel = run_parallel, n_cores = n_cores)
   }	
@@ -170,8 +170,9 @@ pairscan_query <- function(data_obj, geno_obj = NULL, query_genotype,
   
   if(pairscan_null_size > 0){	
     if(use_kinship){
-      pairscan_perm <- pairscan_null_kin(data_obj, geno_obj, kin_obj, 
-        scan_what = scan_what, pairscan_null_size = pairscan_null_size, 
+      pairscan_perm <- pairscan_null_kin_query(data_obj, geno_obj, kin_obj, 
+        query_genotype = query_genotype, scan_what = scan_what, 
+        pairscan_null_size = pairscan_null_size, 
         max_pair_cor = max_pair_cor, min_per_genotype, verbose = verbose, 
         marker_selection_method = marker_selection_method, 
         run_parallel = run_parallel, n_cores = n_cores)
