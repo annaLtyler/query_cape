@@ -165,9 +165,15 @@ kin_obj, verbose = FALSE, run_parallel = FALSE, n_cores = 2){
       #If we are using LTCO
       chr.pair.names <- names(kin_obj)[which(names(kin_obj) != "overall")]
       chr_pairs <- Reduce("rbind", strsplit(chr.pair.names, ","))
-      kin_dat <- apply(chr_pairs, 1, function(x) kin_adjust(kin_obj, geno_mat, 
-      x[1], x[2], phenoV = pheno_vector, covarV = covar_vector))
-      names(kin_dat) <- names(kin_obj)[which(names(kin_obj) != "overall")]
+      #calculate the overall adjustment in case we have covariates.
+      overall_kin_dat <- list("overall" = kin_adjust(kin_obj$overall, 
+        geno_mat, chr1 = NULL, chr2 = NULL,
+        phenoV = pheno_vector, covarV = covar_vector))
+      chr_kin_dat <- apply(chr_pairs, 1, function(x) kin_adjust(kin_obj, geno_mat, 
+        x[1], x[2], phenoV = pheno_vector, covarV = covar_vector))
+      #add the overall adjustment to the kin_dat object
+      kin_dat <- c(overall_kin_dat, chr_kin_dat)
+      names(kin_dat) <- names(kin_obj)
     }
     sink(NULL) #stop sinking output
     
@@ -184,6 +190,7 @@ kin_obj, verbose = FALSE, run_parallel = FALSE, n_cores = 2){
       stopCluster(cl)
       
     } else {      
+
      pairscan_results <- lapply(1:nrow(marker_pairs), 
         function(x) get_marker_pair_stats(m = marker_pairs[x,], kin_dat))
     }
