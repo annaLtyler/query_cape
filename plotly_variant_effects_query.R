@@ -6,7 +6,7 @@ plotly_variant_effects_query <- function(data_obj, geno_obj,
     query_genotype <- data_obj$query_genotype
     allele_cols <- categorical_pal(ncol(geno_obj))
     names(allele_cols) <- 1:ncol(geno_obj)
-    pheno_cols <- c("#9ecae1", "#bdbdbd")
+    pheno_cols <- categorical_pal(ncol(data_obj$pheno))
     pheno_type <- pheno_type[1]
 
     coord_label = paste0("Position (bp/", scale_coord, ")")
@@ -57,25 +57,30 @@ plotly_variant_effects_query <- function(data_obj, geno_obj,
     u_chr <- u_chr[-1] #take off the 0 chromosome. this is the query marker
         
     get_int <- function(phenoV, geno1, geno2){
+        geno1 <- round(geno1, 2)
+        geno2 <- round(geno2, 2)
         geno_pairs <- pair.matrix(c(0,1), self.pairs = TRUE, ordered = TRUE)
         pheno.groups <- apply(geno_pairs, 1, function(x) phenoV[intersect(which(geno1 == x[1]), which(geno2 == x[2]))])
         #boxplot(pheno.groups);abline(h = 0)
         group.means <- sapply(pheno.groups, function(x) mean(x, na.rm = TRUE))
-        #group.se <- sapply(pheno.groups, function(x) sd(x, na.rm = TRUE)/sqrt(length(x)))
+        group.se <- sapply(pheno.groups, function(x) sd(x, na.rm = TRUE)/sqrt(length(x)))
         ref.effect <- group.means[1]
         centered.means <- group.means - ref.effect
-        source.effect <- centered.means[4]
-        target.effect <- centered.means[2]
+        source.effect <- centered.means[4] #difference between 0/0 and 1/0
+        target.effect <- centered.means[2] #difference between 0/0 and 0/1
         
         add.pred <- source.effect + target.effect
+        add.error <- sum(group.se[2:3])
+        add.range <- c((add.pred - add.error), (add.pred + add.error))
 
         result <- c("source.effect" = source.effect, "target.effect" = target.effect, 
-            "additive" = add.pred, "actual" = centered.means[3])
+            "additive" = add.pred, "additive_range" = add.range, "actual" = centered.means[3])
         #barplot(result)
 
     
         return(result)
     }
+
 
     get_nearby_genes <- function(chr, pos, bp.window = 1000){
         chr.locale <- which(as.numeric(gene.table[,1]) == chr)
@@ -112,38 +117,54 @@ plotly_variant_effects_query <- function(data_obj, geno_obj,
         source.chr.locale <- which(source.chr == ch)
 
         if(length(target.chr.locale) > 0){
+            target.idx <- which(u_chr == ch)
             target.markers <- var_int[target.chr.locale,"Target",drop=FALSE]
             split.target <- strsplit(target.markers, "_")
             target.marker.names <- sapply(split.target, function(x) x[1])
             target.allele.names <- sapply(split.target, function(x) x[2])
-            target.allele[[ch]] <- target.allele.names
+            target.allele[[target.idx]] <- target.allele.names
             target.geno <- sapply(1:length(target.marker.names), function(x) matched.geno[,target.allele.names[x], target.marker.names[x],drop=FALSE])
             colnames(target.geno) <- target.markers
-            target.int <- lapply(1:ncol(matched.pheno), function(y) t(apply(target.geno, 2, function(x) get_int(matched.pheno[,y], matched.query, x))))
-            target.ch.pos[[ch]] <- target.pos[target.chr.locale]
+            target.int <- lapply(1:ncol(matched.pheno), 
+                function(y) t(apply(target.geno, 2, 
+                function(x) get_int(phenoV = matched.pheno[,y], geno1 = matched.query, geno2 = x))))
+            target.ch.pos[[target.idx]] <- target.pos[target.chr.locale]
+            target.add.min <- sapply(target.int, function(x) x[,"additive_range1"])
+            target.add.max <- sapply(target.int, function(x) x[,"additive_range2"])
+            target.actual <- sapply(target.int, function(x) x[,"actual"])
+            
+            #idx = 1
+            #test.mat <- rbind(target.add.min[,idx], target.actual[,idx], target.add.max[,idx])
+            #barplot(test.mat, beside = TRUE, col = c("lightblue", "orange", "lightgreen"), main = colnames(matched.pheno)[idx])
+
+            target.in.range <- intersect(which(target.actual > target.add.min), which(target.actual < target.add.max))
+
             target.effects <- sapply(target.int, function(x) x[,"actual"] - x[,"additive"])
             if(is.null(dim(target.effects))){
                 target.effects <- matrix(target.effects, nrow = 1)
             }
+                
+            target.effects[target.in.range] <- 0 #zero out effects that are within the additive error
+            
             colnames(target.effects) <- colnames(pheno)
-            target.deviation[[ch]] <- target.effects
+            target.deviation[[target.idx]] <- target.effects
 
             if(!is.null(gene.table)){
-                target.nearest.gene <- sapply(1:length(target.chr.locale), 
-                function(x) get_nearby_genes(ch, (target.ch.pos[[ch]][x]*scale_coord), 
-                gene.bp.window))
-                target.gene.names[[ch]] <- target.nearest.gene
-            }
-
+            target.nearest.gene <- sapply(1:length(target.chr.locale), 
+            function(x) get_nearby_genes(ch, (target.ch.pos[[target.idx]][x]*scale_coord), 
+            gene.bp.window))
+            target.gene.names[[target.idx]] <- target.nearest.gene
+        }
         }
 
         if(length(source.chr.locale) > 0){
+            source.idx <- which(u_chr == ch)
             source.markers <- var_int[source.chr.locale,"Source",drop=FALSE]        
             split.source <- strsplit(source.markers, "_")
             source.marker.names <- sapply(split.source, function(x) x[1])
             source.allele.names <- sapply(split.source, function(x) x[2])
 
-            source.allele[[ch]] <- source.allele.names
+            source.allele[[source.idx]] <- source.allele.names
 
             source.geno <- sapply(1:length(source.marker.names), function(x) matched.geno[,source.allele.names[x], source.marker.names[x],drop=FALSE])
             colnames(source.geno) <- source.markers    
@@ -151,20 +172,32 @@ plotly_variant_effects_query <- function(data_obj, geno_obj,
                 function(y) t(apply(source.geno, 2, 
                 function(x) get_int(matched.pheno[,y], x, matched.query))))
 
-            source.ch.pos[[ch]] <- source.pos[source.chr.locale]
+            source.ch.pos[[source.idx]] <- source.pos[source.chr.locale]
+            source.add.min <- sapply(source.int, function(x) x[,"additive_range1"])
+            source.add.max <- sapply(source.int, function(x) x[,"additive_range2"])
+            source.actual <- sapply(source.int, function(x) x[,"actual"])
+            
+            #idx = 1
+            #test.mat <- rbind(source.add.min[,idx], source.actual[,idx], source.add.max[,idx])
+            #barplot(test.mat, beside = TRUE, col = c("lightblue", "orange", "lightgreen"), main = colnames(matched.pheno)[idx])
+
+            source.in.range <- intersect(which(source.actual > source.add.min), which(source.actual < source.add.max))
 
             source.effects <- sapply(source.int, function(x) x[,"actual"] - x[,"additive"])
             if(is.null(dim(source.effects))){
                 source.effects <- matrix(source.effects, nrow = 1)
             }
+
+            source.effects[source.in.range] <- 0 #zero out effects that are within the additive error
+
             colnames(source.effects) <- colnames(pheno)
-            source.deviation[[ch]] <- source.effects
+            source.deviation[[source.idx]] <- source.effects
 
             if(!is.null(gene.table)){
                 source.nearest.gene <- sapply(1:length(source.chr.locale), 
-                    function(x) get_nearby_genes(ch, (source.ch.pos[[ch]][x]*scale_coord), 
+                    function(x) get_nearby_genes(ch, (source.ch.pos[[source.idx]][x]*scale_coord), 
                     gene.bp.window))
-                source.gene.names[[ch]] <- source.nearest.gene
+                source.gene.names[[source.idx]] <- source.nearest.gene
             }
 
         }
@@ -174,8 +207,8 @@ plotly_variant_effects_query <- function(data_obj, geno_obj,
         xlim, ylim){
         
         if(length(plot.pos) == 0){
-            fig <- plot_ly(x = segment.region(xlim[1], xlim[2], 100), 
-            y = segment.region(ylim[1], ylim[2], 100), colors = allele_cols, 
+            fig <- plot_ly(x = segment_region(xlim[1], xlim[2], 100), 
+            y = segment_region(ylim[1], ylim[2], 100), colors = allele_cols, 
             mode = "markers", type = "scatter", visible = FALSE)
 
         }else{
@@ -189,7 +222,7 @@ plotly_variant_effects_query <- function(data_obj, geno_obj,
 
             for(ph in 2:num.pheno){
                 fig <- add_segments(fig, x = plot.pos, y = plot.dev[,pheno.names[ph]], 
-                    xend = plot.pos, yend = 0, name = pheno.names[ph], color = I(pheno_cols[2]))
+                    xend = plot.pos, yend = 0, name = pheno.names[ph], color = I(pheno_cols[ph]))
                 fig <- add_trace(fig, type = "scatter", mode = "markers", 
                     x = plot.pos, y = plot.dev[,pheno.names[ph]], size = 1.5,
                     color = plot.allele, text = plot.gene.names, showlegend = FALSE)
@@ -213,6 +246,7 @@ plotly_variant_effects_query <- function(data_obj, geno_obj,
 
     for(ch in 1:length(source.deviation)){
         #quartz(width = 10, height = 6)
+        if(is.null(source.ch.pos[[ch]])){next()}
         xlim <- c(1, max(c(source.ch.pos[[ch]], target.ch.pos[[ch]])))
 
         #create the scatter plot object with gene names as the hover text

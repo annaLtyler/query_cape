@@ -36,8 +36,8 @@ get_query_geno <- function(data_obj, geno_obj, query_genotype){
     #that match the reference allele
     if(ncol(geno_obj) == 2){
         ref.allele <- data_obj$ref_allele
-        keep.idx <- which(fill_alleles != ref.allele)
-        gene <- gene[,keep.idx]
+        remove.idx <- which(fill_alleles == ref.allele)
+        gene <- gene[,-remove.idx]
     }
 
     return(gene)

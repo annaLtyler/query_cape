@@ -287,7 +287,7 @@ run_query_cape <- function(pheno_obj, geno_obj, query_genotype,
 
   data_obj <- error_prop(data_obj, pairscan_obj, perm = TRUE, verbose = verbose,
     n_cores = n_cores, run_parallel = run_parallel)
-    data_obj$save_rds(data_obj, results_file)
+  data_obj$save_rds(data_obj, results_file)
   
   data_obj <- calc_p(data_obj, pval_correction = data_obj$pval_correction)
  
